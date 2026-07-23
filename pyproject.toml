@@ -9,6 +9,7 @@ dependencies = [
     "jupyter",
     "ipykernel",
     "matplotlib",
+    "pip",
 ]
 
 # This is an application, not a distributable package — don't build the root.
