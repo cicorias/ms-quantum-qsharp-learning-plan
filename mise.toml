@@ -1,0 +1,25 @@
+# mise provisions the toolchain; uv manages the Python environment.
+#   mise install       # install the pinned Python + uv
+#   mise run setup     # create .venv and install deps from pyproject.toml (uv sync)
+#   mise run lab       # launch Jupyter Lab in the project env
+#   mise run examples  # compile & run every examples/*.qs on the simulator
+
+[tools]
+python = "3.12"
+uv = "latest"
+
+[env]
+# keep uv's virtualenv local to the repo
+UV_PROJECT_ENVIRONMENT = ".venv"
+
+[tasks.setup]
+description = "Create the venv and install dependencies with uv"
+run = "uv sync"
+
+[tasks.lab]
+description = "Launch Jupyter Lab in the project environment"
+run = "uv run jupyter lab"
+
+[tasks.examples]
+description = "Compile and run all Q# examples via the local simulator"
+run = "uv run python scripts/run_examples.py"

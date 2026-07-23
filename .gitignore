@@ -1,0 +1,15 @@
+# Q# / QDK build output
+obj/
+bin/
+.qsharp/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q# Learning Bootstrap &amp; Ramp</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel-2:#1c2330; --border:#2a323d;
+    --ink:#e6edf3; --muted:#9aa7b4; --faint:#6b7684;
+    --accent:#5aa9e6;      /* azure */
+    --accent-2:#7c6cf0;    /* violet */
+    --good:#3fb950; --warn:#d29922;
+    --chip:#20293a; --link:#6cb6ff;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.25);
+    --radius:14px;
+  }
+  html[data-theme="light"]{
+    --bg:#f6f8fa; --panel:#ffffff; --panel-2:#f0f3f7; --border:#d7dee6;
+    --ink:#1c2430; --muted:#54606d; --faint:#7b8794;
+    --accent:#2b7fc4; --accent-2:#6a5ce0; --good:#1a7f37; --warn:#9a6700;
+    --chip:#eef2f7; --link:#0a66c2;
+    --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--link);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:8px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);max-width:640px;font-size:15px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  button.btn{background:var(--panel);color:var(--ink);border:1px solid var(--border);
+    padding:8px 12px;border-radius:10px;cursor:pointer;font-size:13px}
+  button.btn:hover{border-color:var(--accent)}
+  .progwrap{margin:22px 0 8px;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+  .progrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px}
+  .bar{height:10px;background:var(--panel-2);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .35s ease}
+  section.block{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    margin:18px 0;box-shadow:var(--shadow);overflow:hidden}
+  .block > h2{margin:0;font-size:18px;padding:16px 20px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px}
+  .block > .body{padding:6px 20px 18px}
+  .lede{color:var(--muted);font-size:14.5px;margin:12px 0 8px}
+  .pill{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--muted);border:1px solid var(--border)}
+  .phase-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;font-size:14px;flex:none}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 10px}
+  .concepts{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}
+  .concepts .c{font-size:12px;background:var(--panel-2);border:1px solid var(--border);
+    color:var(--muted);padding:3px 8px;border-radius:7px}
+  h4{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
+  ul.tasks{list-style:none;margin:6px 0;padding:0}
+  ul.tasks li{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:14.5px}
+  ul.tasks input[type=checkbox]{margin-top:3px;width:17px;height:17px;accent-color:var(--accent);flex:none;cursor:pointer}
+  ul.tasks li.done label{color:var(--faint);text-decoration:line-through}
+  .res{font-size:13.5px;color:var(--muted);margin:4px 0}
+  .checkpoint{margin-top:12px;background:var(--panel-2);border:1px solid var(--border);border-left:3px solid var(--good);
+    padding:10px 14px;border-radius:0 10px 10px 0;font-size:13.5px}
+  .checkpoint b{color:var(--ink)}
+  code, pre{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{background:var(--panel-2);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-size:12.5px}
+  pre{background:var(--panel-2);border:1px solid var(--border);padding:14px;border-radius:10px;overflow:auto;font-size:12.5px;line-height:1.5}
+  pre .kw{color:var(--accent-2)} pre .op{color:var(--accent)} pre .cm{color:var(--faint)} pre .st{color:var(--good)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .card h3{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--muted);font-size:13.5px}
+  .svgwrap{overflow:auto;border:1px solid var(--border);border-radius:12px;background:var(--panel-2);padding:8px;margin-top:6px}
+  table.gloss{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  table.gloss td{border-bottom:1px solid var(--border);padding:8px 10px;vertical-align:top}
+  table.gloss td:first-child{white-space:nowrap;font-weight:600;color:var(--ink);width:1%}
+  .lane{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-right:6px}
+  .lane.core{background:rgba(90,169,230,.16);color:var(--accent);border:1px solid rgba(90,169,230,.35)}
+  .lane.fast{background:rgba(210,153,34,.16);color:var(--warn);border:1px solid rgba(210,153,34,.4)}
+  footer{color:var(--faint);font-size:12.5px;margin-top:30px;text-align:center;line-height:1.7}
+  .note{font-size:12px;color:var(--faint);margin-top:4px}
+  .tocbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+  .tocbar a{font-size:12.5px;background:var(--panel);border:1px solid var(--border);padding:5px 10px;border-radius:8px;color:var(--muted)}
+  .tocbar a:hover{border-color:var(--accent);text-decoration:none;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div>
+    <h1>Q# Learning Bootstrap &amp; Ramp</h1>
+    <div class="sub">A phased path from zero to running quantum programs on real hardware with Microsoft's Azure Quantum Development Kit (QDK) and the Q# language. Two lanes: <span class="lane core">CORE</span> full path for developers new to quantum, and <span class="lane fast">FAST</span> a skip-ahead track if you already know the theory.</div>
+  </div>
+  <div class="controls">
+    <button class="btn" id="themeBtn">☀ / ☾ Theme</button>
+    <button class="btn" id="resetBtn">Reset progress</button>
+  </div>
+</header>
+
+<div class="progwrap">
+  <div class="progrow"><span><b id="pctText">0%</b> complete &middot; <span id="countText">0 of 0</span> steps</span><span class="pill" id="phaseText">Phase 0</span></div>
+  <div class="bar"><i id="barFill"></i></div>
+  <div class="note">Progress is saved in this browser when you open the file locally. Nothing is uploaded.</div>
+</div>
+
+<div class="tocbar">
+  <a href="#ontology">Ontology map</a>
+  <a href="#p0">0 · Setup</a>
+  <a href="#p1">1 · Foundations</a>
+  <a href="#p2">2 · First qubit</a>
+  <a href="#p3">3 · Multi-qubit</a>
+  <a href="#p4">4 · Measurement</a>
+  <a href="#p5">5 · Algorithms</a>
+  <a href="#p6">6 · Python + sim</a>
+  <a href="#p7">7 · Azure + hardware</a>
+  <a href="#p8">8 · Capstone</a>
+  <a href="#gloss">Glossary</a>
+</div>
+
+<!-- ================= ONTOLOGY ================= -->
+<section class="block" id="ontology">
+  <h2>🧭 The concept ontology</h2>
+  <div class="body">
+    <p class="lede">How the ideas relate. Each layer builds on the one below it: math grounds the physics, the physics defines the programming model, the language expresses it, the tools run it, and the algorithms are what you build with it. The ramp below walks these layers bottom-to-top.</p>
+    <div class="svgwrap">
+      <svg viewBox="0 0 940 470" width="940" role="img" aria-label="Q# concept ontology, layered from mathematical foundations up to algorithms and execution">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5aa9e6"/><stop offset="1" stop-color="#7c6cf0"/>
+          </linearGradient>
+          <style>
+            .lyr{fill:#1c2330;stroke:#2a323d;stroke-width:1.2;rx:10}
+            .lt{fill:#e6edf3;font:600 15px -apple-system,Segoe UI,sans-serif}
+            .ld{fill:#9aa7b4;font:12px -apple-system,Segoe UI,sans-serif}
+            .node{fill:#20293a;stroke:#3a4a63;stroke-width:1}
+            .nt{fill:#cdd8e4;font:11.5px -apple-system,Segoe UI,sans-serif}
+            .band{fill:url(#g1);opacity:.14}
+            .bnum{fill:#8fb7e8;font:700 12px -apple-system,Segoe UI,sans-serif}
+            .rel{stroke:#5a6b82;stroke-width:1;fill:none;stroke-dasharray:3 3}
+          </style>
+        </defs>
+
+        <!-- Layer F -->
+        <rect class="band" x="20" y="18" width="900" height="66" rx="10"/>
+        <text class="lt" x="38" y="44">Execution &amp; Scale</text>
+        <text class="ld" x="38" y="64">Azure Quantum · resource estimation · error correction · real QPUs · Qiskit/Cirq interop</text>
+        <rect class="node" x="470" y="30" width="120" height="24" rx="6"/><text class="nt" x="482" y="46">Azure Quantum</text>
+        <rect class="node" x="600" y="30" width="140" height="24" rx="6"/><text class="nt" x="612" y="46">Resource Estimator</text>
+        <rect class="node" x="750" y="30" width="150" height="24" rx="6"/><text class="nt" x="762" y="46">Fault tolerance / QEC</text>
+
+        <!-- Layer E -->
+        <rect class="band" x="20" y="94" width="900" height="66" rx="10"/>
+        <text class="lt" x="38" y="120">Algorithms &amp; Protocols</text>
+        <text class="ld" x="38" y="140">Deutsch–Jozsa · Bernstein–Vazirani · Grover · QFT · phase estimation · teleportation · superdense coding</text>
+        <rect class="node" x="560" y="106" width="90" height="24" rx="6"/><text class="nt" x="572" y="122">Grover</text>
+        <rect class="node" x="660" y="106" width="70" height="24" rx="6"/><text class="nt" x="672" y="122">QFT</text>
+        <rect class="node" x="740" y="106" width="160" height="24" rx="6"/><text class="nt" x="752" y="122">Teleportation protocol</text>
+
+        <!-- Layer D -->
+        <rect class="band" x="20" y="170" width="900" height="66" rx="10"/>
+        <text class="lt" x="38" y="196">Tooling &amp; Environment</text>
+        <text class="ld" x="38" y="216">QDK VS Code extension · qsharp Python package · Jupyter · simulators · Copilot in Azure Quantum · Katas</text>
+        <rect class="node" x="520" y="182" width="130" height="24" rx="6"/><text class="nt" x="532" y="198">QDK / VS Code</text>
+        <rect class="node" x="660" y="182" width="120" height="24" rx="6"/><text class="nt" x="672" y="198">qsharp + Jupyter</text>
+        <rect class="node" x="790" y="182" width="110" height="24" rx="6"/><text class="nt" x="802" y="198">Simulators</text>
+
+        <!-- Layer C -->
+        <rect class="band" x="20" y="246" width="900" height="78" rx="10"/>
+        <text class="lt" x="38" y="272">Q# Language</text>
+        <text class="ld" x="38" y="292">operations vs functions · Qubit / Result types · use-allocation · Adjoint/Controlled · namespaces &amp; std library</text>
+        <rect class="node" x="470" y="284" width="130" height="24" rx="6"/><text class="nt" x="482" y="300">operation / function</text>
+        <rect class="node" x="610" y="284" width="120" height="24" rx="6"/><text class="nt" x="622" y="300">use q = Qubit()</text>
+        <rect class="node" x="740" y="284" width="160" height="24" rx="6"/><text class="nt" x="752" y="300">Adjoint / Controlled</text>
+
+        <!-- Layer B -->
+        <rect class="band" x="20" y="334" width="900" height="78" rx="10"/>
+        <text class="lt" x="38" y="360">Quantum Computing Concepts</text>
+        <text class="ld" x="38" y="380">qubit · superposition · gates &amp; circuits · entanglement · measurement · no-cloning · Bloch sphere</text>
+        <rect class="node" x="470" y="372" width="90" height="24" rx="6"/><text class="nt" x="482" y="388">superposition</text>
+        <rect class="node" x="570" y="372" width="100" height="24" rx="6"/><text class="nt" x="582" y="388">entanglement</text>
+        <rect class="node" x="680" y="372" width="100" height="24" rx="6"/><text class="nt" x="692" y="388">measurement</text>
+        <rect class="node" x="790" y="372" width="110" height="24" rx="6"/><text class="nt" x="802" y="388">gates/circuits</text>
+
+        <!-- Layer A -->
+        <rect class="band" x="20" y="422" width="900" height="34" rx="10"/>
+        <text class="lt" x="38" y="444">Mathematical Foundations</text>
+        <text class="ld" x="470" y="444">complex numbers · vectors &amp; matrices · tensor products · probability · Dirac notation |ψ⟩</text>
+
+        <!-- vertical "builds on" arrow -->
+        <line class="rel" x1="30" y1="430" x2="30" y2="40"/>
+        <polygon points="26,44 34,44 30,32" fill="#5a6b82"/>
+        <text class="bnum" x="8" y="240" transform="rotate(-90 8 240)">builds upward →</text>
+      </svg>
+    </div>
+    <p class="note">Taxonomy = the eight phases below sort every learning task into a category. Ontology = the layers above show how the concepts depend on each other.</p>
+  </div>
+</section>
+
+<!-- ================= PHASE 0 ================= -->
+<section class="block" id="p0">
+  <h2><span class="phase-num">0</span> Setup &amp; orientation <span class="pill">bootstrap · ~1–2 hrs</span></h2>
+  <div class="body">
+    <p class="lede">Get a working environment before touching any theory. You want to be able to write a Q# file and run it locally in the first sitting.</p>
+    <div class="concepts"><span class="c">QDK</span><span class="c">VS Code extension</span><span class="c">local simulator</span><span class="c">quantum.microsoft.com</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="0">
+      <li><input type="checkbox"><label>Install VS Code and the <b>Azure Quantum Development Kit (QDK)</b> extension (publisher: <code>quantum</code>). No Azure account needed for local work.</label></li>
+      <li><input type="checkbox"><label>Create a <code>.qs</code> file, paste the "measure one qubit" sample, and run it on the built-in simulator.</label></li>
+      <li><input type="checkbox"><label>Skim the QDK overview so you know what's in the box: language, simulators, resource estimator, Python/Jupyter, Katas.</label></li>
+      <li><input type="checkbox"><label>Open <b>quantum.microsoft.com</b> and try <b>Copilot in Azure Quantum</b> — an in-browser Q# playground you can use with zero install.</label></li>
+    </ul>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/install-overview-qdk">Set up the QDK extension</a> · <a href="https://learn.microsoft.com/en-us/azure/quantum/qdk-main-overview">What's in the QDK</a> · <a href="https://quantum.microsoft.com/en-us/tools/quantum-coding">Code with Azure Quantum (browser)</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> a <code>.qs</code> file runs locally and prints a <code>Zero</code>/<code>One</code> result, and you've run one snippet in the browser Copilot.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 1 ================= -->
+<section class="block" id="p1">
+  <h2><span class="phase-num">1</span> Foundations: math + quantum concepts <span class="pill">core · ~1–2 wks</span></h2>
+  <div class="body">
+    <p class="lede"><span class="lane core">CORE</span> The minimum mental model. You do not need a physics degree — you need enough linear algebra to read a state vector and enough intuition for what a gate and a measurement do. <span class="lane fast">FAST</span> If you already know qubits, superposition, entanglement, and can read Dirac notation, skim and jump to Phase 2.</p>
+    <div class="concepts"><span class="c">complex numbers</span><span class="c">vectors/matrices</span><span class="c">tensor product</span><span class="c">Dirac notation</span><span class="c">superposition</span><span class="c">entanglement</span><span class="c">measurement</span><span class="c">Bloch sphere</span><span class="c">no-cloning</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="1">
+      <li><input type="checkbox"><label>Refresh the linear-algebra you need: complex numbers, column vectors, matrix–vector multiply, unitary matrices, and the tensor (Kronecker) product.</label></li>
+      <li><input type="checkbox"><label>Learn the qubit state <code>α|0⟩ + β|1⟩</code> with <code>|α|² + |β|² = 1</code>; understand why measurement gives a probabilistic <code>Zero</code>/<code>One</code> and collapses the state.</label></li>
+      <li><input type="checkbox"><label>Work the <b>Complex Arithmetic</b> and <b>Linear Algebra</b> Katas (they're built into QDK Learning).</label></li>
+      <li><input type="checkbox"><label>Work the <b>The Qubit</b> and <b>Single-Qubit Gates</b> Katas — theory + exercises.</label></li>
+      <li><input type="checkbox"><label>Build intuition for the Bloch sphere and for why quantum states can't be copied (no-cloning).</label></li>
+    </ul>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/katas-qdk-learning">Katas in QDK Learning</a> · <a href="https://learn.microsoft.com/en-us/training/paths/quantum-computing-fundamentals/">MS Learn: Quantum computing foundations path</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> you can hand-calculate the state after applying <code>H</code> to <code>|0⟩</code> and predict the measurement probabilities.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 2 ================= -->
+<section class="block" id="p2">
+  <h2><span class="phase-num">2</span> First Q# programs: one qubit <span class="pill">core · ~1 wk</span></h2>
+  <div class="body">
+    <p class="lede">Translate the concepts into the language. Focus on the Q# programming model, not on algorithms yet.</p>
+    <div class="concepts"><span class="c">operation vs function</span><span class="c">Qubit / Result</span><span class="c">use-allocation</span><span class="c">intrinsic gates</span><span class="c">Reset</span><span class="c">@EntryPoint</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="2">
+      <li><input type="checkbox"><label>Learn the program skeleton: <code>operation</code> vs <code>function</code>, <code>use q = Qubit()</code>, the <code>Result</code> type, and why every qubit must be <code>Reset</code> before release.</label></li>
+      <li><input type="checkbox"><label>Apply the intrinsic gates <code>H, X, Y, Z, S, T, Rx, Ry, Rz</code> and measure with <code>M</code> / <code>MResetZ</code>.</label></li>
+      <li><input type="checkbox"><label>Write a quantum coin flip and a biased coin using <code>Ry</code>; run it many times and confirm the distribution.</label></li>
+      <li><input type="checkbox"><label>Learn <code>let</code> vs <code>mutable</code>, <code>for</code>/<code>if</code> control flow, arrays, and tuples in Q#.</label></li>
+      <li><input type="checkbox"><label>Use the <b>DumpMachine</b> diagnostic to inspect the simulated state vector while debugging.</label></li>
+    </ul>
+    <h4>Model snippet</h4>
+    <pre><span class="cm">// A single-qubit superposition, measured</span>
+<span class="kw">operation</span> FlipCoin() : <span class="op">Result</span> {
+    <span class="kw">use</span> q = Qubit();      <span class="cm">// starts in |0⟩</span>
+    H(q);                 <span class="cm">// into equal superposition</span>
+    <span class="kw">let</span> r = MResetZ(q);   <span class="cm">// measure AND reset in one step</span>
+    <span class="kw">return</span> r;             <span class="cm">// Zero or One, ~50/50</span>
+}</pre>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/qsharp-overview">Introduction to Q#</a> · <a href="https://learn.microsoft.com/en-us/azure/quantum/qsharp-ways-to-work">Ways to work with Q#</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> you can write, run, and debug a single-qubit operation from scratch without a template, and explain each line.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 3 ================= -->
+<section class="block" id="p3">
+  <h2><span class="phase-num">3</span> Multi-qubit systems &amp; entanglement <span class="pill">core · ~1–2 wks</span></h2>
+  <div class="body">
+    <p class="lede">The step where quantum stops looking like fancy coin flips. Registers, controlled gates, and the Bell states.</p>
+    <div class="concepts"><span class="c">qubit registers</span><span class="c">tensor product state</span><span class="c">CNOT</span><span class="c">controlled gates</span><span class="c">Bell states</span><span class="c">GHZ</span><span class="c">entanglement</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="3">
+      <li><input type="checkbox"><label>Allocate registers with <code>use qs = Qubit[n]</code>; understand how the state space grows as 2ⁿ amplitudes.</label></li>
+      <li><input type="checkbox"><label>Use <code>CNOT</code> and other controlled gates; build a Bell pair with <code>H</code> + <code>CNOT</code> and verify the correlated measurements.</label></li>
+      <li><input type="checkbox"><label>Work the <b>Multi-Qubit Systems</b>, <b>Multi-Qubit Gates</b>, and <b>Superposition</b> Katas.</label></li>
+      <li><input type="checkbox"><label>Extend a Bell pair to a 3-qubit GHZ state; predict and confirm the outcome statistics.</label></li>
+      <li><input type="checkbox"><label>Learn <code>Controlled</code> and <code>Adjoint</code> functors and the <code>within { } apply { }</code> pattern for clean uncompute.</label></li>
+    </ul>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/katas-qdk-learning">Katas: Multi-Qubit Systems &amp; Gates</a> · <a href="https://github.com/microsoft/qsharp">microsoft/qsharp (samples &amp; source)</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> you can create and measure a Bell state and explain why the two results are always correlated.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 4 ================= -->
+<section class="block" id="p4">
+  <h2><span class="phase-num">4</span> Measurement, oracles &amp; core patterns <span class="pill">core · ~1 wk</span></h2>
+  <div class="body">
+    <p class="lede">The reusable building blocks every algorithm leans on: basis choice, phase kickback, and marking oracles.</p>
+    <div class="concepts"><span class="c">Pauli bases</span><span class="c">partial measurement</span><span class="c">phase kickback</span><span class="c">marking vs phase oracle</span><span class="c">amplitude amplification (intuition)</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="4">
+      <li><input type="checkbox"><label>Measure in the X/Y/Z bases with <code>Measure([PauliX], ...)</code>; understand what a measurement in a rotated basis tells you.</label></li>
+      <li><input type="checkbox"><label>Work the <b>Measurements</b> Kata (single- and multi-qubit).</label></li>
+      <li><input type="checkbox"><label>Understand phase kickback and the difference between a <b>marking oracle</b> and a <b>phase oracle</b>.</label></li>
+      <li><input type="checkbox"><label>Implement a simple oracle that flips the phase of one marked basis state.</label></li>
+    </ul>
+    <div class="checkpoint"><b>Checkpoint:</b> you can implement a phase oracle and explain phase kickback in one paragraph.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 5 ================= -->
+<section class="block" id="p5">
+  <h2><span class="phase-num">5</span> Quantum algorithms &amp; protocols <span class="pill">core · ~2–3 wks</span></h2>
+  <div class="body">
+    <p class="lede">Where it all pays off. Implement the canonical algorithms; each one exercises the patterns from Phase 4.</p>
+    <div class="concepts"><span class="c">Deutsch–Jozsa</span><span class="c">Bernstein–Vazirani</span><span class="c">Grover search</span><span class="c">QFT</span><span class="c">phase estimation</span><span class="c">teleportation</span><span class="c">superdense coding</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="5">
+      <li><input type="checkbox"><label>Implement <b>Deutsch–Jozsa</b> and <b>Bernstein–Vazirani</b> — the gentlest "quantum beats classical" examples.</label></li>
+      <li><input type="checkbox"><label>Implement <b>Grover's search</b> end to end: oracle, diffusion operator, and choosing the number of iterations.</label></li>
+      <li><input type="checkbox"><label>Implement the <b>Quantum Fourier Transform</b> and use it for <b>quantum phase estimation</b>.</label></li>
+      <li><input type="checkbox"><label>Implement <b>quantum teleportation</b> and <b>superdense coding</b> — the entanglement-as-a-resource protocols.</label></li>
+      <li><input type="checkbox"><label>Work the matching Katas (Deutsch–Jozsa, Grover's Search, Teleportation, QFT) to check your implementations against reference solutions.</label></li>
+    </ul>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/katas-qdk-learning">Algorithm Katas</a> · <a href="https://github.com/microsoft/qsharp/tree/main/samples">Q# algorithm samples</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> Grover's search finds a marked item in your own oracle, and you can explain why ~√N iterations.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 6 ================= -->
+<section class="block" id="p6">
+  <h2><span class="phase-num">6</span> Python interop, Jupyter &amp; simulation <span class="pill">core · ~1 wk</span></h2>
+  <div class="body">
+    <p class="lede">Wire Q# into the ecosystem you already work in. This is how quantum code fits a real workflow: classical Python driving quantum kernels.</p>
+    <div class="concepts"><span class="c">qdk package</span><span class="c">Jupyter %%qsharp</span><span class="c">state-vector simulator</span><span class="c">noise/estimates</span><span class="c">Qiskit/Cirq interop</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="6">
+      <li><input type="checkbox"><label>Set up Python with <code>mise</code> + <code>uv</code> (deps in <code>pyproject.toml</code>, not system Python): <code>mise run setup</code>. Call Q# from Python via <code>from qdk import qsharp</code> — the modern package (<code>qsharp</code> is deprecated).</label></li>
+      <li><input type="checkbox"><label>Use the Jupyter <code>%%qsharp</code> cell magic to author and simulate inline; plot measurement histograms with matplotlib.</label></li>
+      <li><input type="checkbox"><label>Sweep parameters (e.g. rotation angles) from Python and visualize how outcomes shift.</label></li>
+      <li><input type="checkbox"><label>Try importing an OpenQASM / Qiskit or Cirq circuit into the QDK to see the interop story.</label></li>
+    </ul>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/qsharp-ways-to-work">Q# with Python &amp; Jupyter</a> · <a href="https://learn.microsoft.com/en-us/azure/quantum">Azure Quantum documentation</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> a Jupyter notebook runs a Q# operation, sweeps a parameter, and plots the result distribution.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 7 ================= -->
+<section class="block" id="p7">
+  <h2><span class="phase-num">7</span> Azure Quantum, resource estimation &amp; hardware <span class="pill">advanced · ~1–2 wks</span></h2>
+  <div class="body">
+    <p class="lede">From simulator to scale. Understand what it would actually cost to run an algorithm on a fault-tolerant machine, and how to submit to real backends.</p>
+    <div class="concepts"><span class="c">Azure Quantum workspace</span><span class="c">Resource Estimator</span><span class="c">logical vs physical qubits</span><span class="c">error correction</span><span class="c">QPU backends</span><span class="c">job submission</span></div>
+    <h4>Do</h4>
+    <ul class="tasks" data-phase="7">
+      <li><input type="checkbox"><label>Run the <b>Azure Quantum Resource Estimator</b> on one of your algorithms; read the physical-qubit and runtime estimates and vary the error-budget/QEC assumptions.</label></li>
+      <li><input type="checkbox"><label>Understand logical vs physical qubits and why error correction dominates the resource cost.</label></li>
+      <li><input type="checkbox"><label>(Optional, needs Azure) Create an Azure Quantum workspace and submit a small job to a hardware or emulator backend.</label></li>
+      <li><input type="checkbox"><label>Learn the constraints of running on real hardware: limited coherence, gate errors, and why circuits must stay shallow today.</label></li>
+    </ul>
+    <h4>Resources</h4>
+    <div class="res">→ <a href="https://learn.microsoft.com/en-us/azure/quantum/intro-to-resource-estimation">Intro to resource estimation</a> · <a href="https://learn.microsoft.com/en-us/azure/quantum">Azure Quantum docs</a></div>
+    <div class="checkpoint"><b>Checkpoint:</b> you can produce and interpret a resource estimate for Grover or phase estimation at a chosen problem size.</div>
+  </div>
+</section>
+
+<!-- ================= PHASE 8 ================= -->
+<section class="block" id="p8">
+  <h2><span class="phase-num">8</span> Capstone projects <span class="pill">apply · ongoing</span></h2>
+  <div class="body">
+    <p class="lede">Consolidate by building something end-to-end. Pick one; each pulls together several phases.</p>
+    <div class="grid2">
+      <div class="card"><h3>Grover-powered mini solver</h3><p>Encode a small SAT or graph-coloring instance as an oracle and solve it with Grover; drive it and visualize from Python.</p></div>
+      <div class="card"><h3>Teleportation demo + writeup</h3><p>Implement teleportation with clear diagnostics, then explain the protocol as a short technical doc in the repo.</p></div>
+      <div class="card"><h3>Phase-estimation explorer</h3><p>Estimate eigenphases of a small unitary; sweep precision qubits and plot accuracy vs cost.</p></div>
+      <div class="card"><h3>Resource-estimate report</h3><p>Take a textbook algorithm to a realistic size and produce a resource-estimation report with the QDK estimator.</p></div>
+    </div>
+    <ul class="tasks" data-phase="8" style="margin-top:14px">
+      <li><input type="checkbox"><label>Ship one capstone with a README, runnable Q#, and a Python driver.</label></li>
+      <li><input type="checkbox"><label>Write a short reflection: what surprised you about the quantum programming model.</label></li>
+    </ul>
+    <div class="checkpoint"><b>Checkpoint:</b> a self-contained project in this repo that someone else could clone and run.</div>
+  </div>
+</section>
+
+<!-- ================= GLOSSARY ================= -->
+<section class="block" id="gloss">
+  <h2>📖 Fast glossary</h2>
+  <div class="body">
+    <table class="gloss">
+      <tr><td>QDK</td><td>Azure Quantum Development Kit — Microsoft's toolkit: the Q# language, simulators, resource estimator, VS Code extension, and Python/Jupyter integration.</td></tr>
+      <tr><td>Q#</td><td>Microsoft's high-level, hardware-agnostic quantum programming language. Separates quantum <em>operations</em> from classical <em>functions</em>.</td></tr>
+      <tr><td>operation</td><td>A Q# subroutine that can act on qubits (has quantum side effects). Contrast with a <em>function</em>, which is deterministic classical code.</td></tr>
+      <tr><td>Qubit / Result</td><td>Core Q# types. A <code>Qubit</code> is a quantum bit reference; measuring it yields a <code>Result</code> of <code>Zero</code> or <code>One</code>.</td></tr>
+      <tr><td>Superposition</td><td>A qubit being in a weighted combination of |0⟩ and |1⟩ until measured.</td></tr>
+      <tr><td>Entanglement</td><td>A joint state of multiple qubits that can't be described independently; measuring one instantly constrains the others.</td></tr>
+      <tr><td>Adjoint / Controlled</td><td>Q# functors that auto-generate the inverse of an operation, or a version conditioned on control qubits.</td></tr>
+      <tr><td>Oracle</td><td>A reversible quantum subroutine encoding a classical function; algorithms like Grover query it.</td></tr>
+      <tr><td>Katas</td><td>Microsoft's self-paced Q# tutorials (theory + graded exercises), now built into QDK Learning and the browser Copilot.</td></tr>
+      <tr><td>Resource Estimator</td><td>QDK tool that predicts the physical qubits and runtime an algorithm needs on a fault-tolerant machine.</td></tr>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Built for the <code>ms-quantum</code> project · palette and content are self-contained · progress stored locally in your browser.<br>
+  Primary sources: Microsoft Learn — Azure Quantum, and quantum.microsoft.com.
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var KEY = "qsharp_roadmap_progress_v1";
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('ul.tasks input[type=checkbox]'));
+  boxes.forEach(function(b,i){ b.dataset.idx = i; });
+
+  function load(){
+    try{ var raw = localStorage.getItem(KEY); if(!raw) return {}; return JSON.parse(raw)||{}; }
+    catch(e){ return {}; }
+  }
+  function save(state){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  }
+  var state = load();
+
+  function apply(){
+    boxes.forEach(function(b){
+      var on = !!state[b.dataset.idx];
+      b.checked = on;
+      b.closest('li').classList.toggle('done', on);
+    });
+    var done = boxes.filter(function(b){return b.checked;}).length;
+    var total = boxes.length;
+    var pct = total ? Math.round(done/total*100) : 0;
+    document.getElementById('pctText').textContent = pct + '%';
+    document.getElementById('countText').textContent = done + ' of ' + total;
+    document.getElementById('barFill').style.width = pct + '%';
+    // current phase = first phase with an unchecked box
+    var phaseText = 'Done 🎉';
+    var groups = document.querySelectorAll('ul.tasks');
+    for(var g=0; g<groups.length; g++){
+      var any = Array.prototype.slice.call(groups[g].querySelectorAll('input')).some(function(x){return !x.checked;});
+      if(any){ phaseText = 'Phase ' + groups[g].dataset.phase; break; }
+    }
+    document.getElementById('phaseText').textContent = phaseText;
+  }
+
+  boxes.forEach(function(b){
+    b.addEventListener('change', function(){
+      state[b.dataset.idx] = b.checked;
+      save(state); apply();
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    state = {}; save(state); apply();
+  });
+
+  var themeBtn = document.getElementById('themeBtn');
+  try{ var t = localStorage.getItem('qsharp_theme'); if(t) document.documentElement.setAttribute('data-theme', t); }catch(e){}
+  themeBtn.addEventListener('click', function(){
+    var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', cur);
+    try{ localStorage.setItem('qsharp_theme', cur); }catch(e){}
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

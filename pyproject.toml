@@ -1,0 +1,16 @@
+[project]
+name = "ms-quantum"
+version = "0.1.0"
+description = "Q# learning bootstrap & ramp with the Azure Quantum Development Kit (QDK)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "qdk",        # modern QDK Python package (registers the %%qsharp magic); replaces the deprecated `qsharp`
+    "jupyter",
+    "ipykernel",
+    "matplotlib",
+]
+
+# This is an application, not a distributable package — don't build the root.
+[tool.uv]
+package = false
