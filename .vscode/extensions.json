@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "quantum.qsharp-lang-vscode",
+        "ms-toolsai.jupyter"
+    ]
+}
