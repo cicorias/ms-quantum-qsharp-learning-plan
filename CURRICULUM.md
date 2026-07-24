@@ -49,6 +49,10 @@ Get a working environment before any theory.
 The minimum mental model. Enough linear algebra to read a state vector; enough
 intuition for what a gate and a measurement do. *(FAST: skim and jump to Phase 2.)*
 
+> **Deep dive:** this phase is expanded into a full starter → intermediate section at
+> [`docs/01-foundations/`](docs/01-foundations/) — open `docs/01-foundations/foundations.html`
+> for rendered math, a Bloch-sphere diagram, worked examples, and self-checks across 8 sub-sections.
+
 - Refresh: complex numbers, column vectors, matrix–vector multiply, unitary
   matrices, tensor (Kronecker) product.
 - Qubit state `α|0⟩ + β|1⟩` with `|α|² + |β|² = 1`; why measurement is

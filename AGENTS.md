@@ -83,3 +83,20 @@ Jupyter magic.
   flags an unknown name, check the current `Std.*` namespace rather than
   reverting to the old `Microsoft.Quantum.*` names.
 - For anything Python, go through `mise` / `uv` — see "Python toolchain" above.
+
+## Docs structure & numbering convention
+
+Longer-form learning material lives under `docs/`, split into sections that
+mirror the roadmap phases:
+
+- Each **section** folder is `docs/NN-<name>/`, where `NN` is the zero-padded
+  roadmap phase number (e.g. Phase 1 -> `docs/01-foundations/`).
+- Inside a section, each **sub-section** is its own zero-padded folder
+  (`01-...`, `02-...`) holding a `README.md` you can expand with notes.
+- A section may include an interactive deep-dive page (e.g. `foundations.html`)
+  at its root, plus a section `README.md` index.
+- Numbering stays aligned with `roadmap.html` / `CURRICULUM.md` so the docs and
+  the phase tracker always reference each other by the same numbers.
+
+When adding a new section, create `docs/NN-<name>/`, add a `README.md` index,
+and number sub-section folders from `01-`.

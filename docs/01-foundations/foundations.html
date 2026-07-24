@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foundations — Math + Quantum Concepts (Q# Ramp, Phase 1)</title>
+<script>
+  window.MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js" async></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel-2:#1c2330; --border:#2a323d;
+    --ink:#e6edf3; --muted:#9aa7b4; --faint:#6b7684;
+    --accent:#5aa9e6; --accent-2:#7c6cf0; --good:#3fb950; --warn:#d29922;
+    --chip:#20293a; --link:#6cb6ff;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.25);
+  }
+  html[data-theme="light"]{
+    --bg:#f6f8fa; --panel:#fff; --panel-2:#f0f3f7; --border:#d7dee6;
+    --ink:#1c2430; --muted:#54606d; --faint:#7b8794;
+    --accent:#2b7fc4; --accent-2:#6a5ce0; --good:#1a7f37; --warn:#9a6700;
+    --chip:#eef2f7; --link:#0a66c2; --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
+  a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:grid;grid-template-columns:260px 1fr;gap:0;max-width:1180px;margin:0 auto}
+  @media(max-width:860px){.layout{grid-template-columns:1fr}.side{position:static !important;height:auto !important;border-right:none;border-bottom:1px solid var(--border)}}
+  .side{position:sticky;top:0;height:100vh;overflow:auto;padding:22px 16px;border-right:1px solid var(--border);background:var(--panel)}
+  .side h1{font-size:15px;margin:0 0 4px;letter-spacing:-.01em}
+  .side .tag{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:block}
+  .side nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--muted);font-size:13.5px;margin:1px 0}
+  .side nav a:hover{background:var(--panel-2);text-decoration:none;color:var(--ink)}
+  .side nav a .n{display:inline-block;width:20px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .side .backlinks{margin-top:16px;border-top:1px solid var(--border);padding-top:12px;font-size:12.5px}
+  .side .backlinks a{display:block;color:var(--muted);padding:3px 0}
+  .main{padding:34px 40px 90px;min-width:0}
+  @media(max-width:860px){.main{padding:24px 20px 70px}}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  h1.title{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  .lead{color:var(--muted);max-width:680px;font-size:15px}
+  button.btn{background:var(--panel);color:var(--ink);border:1px solid var(--border);padding:7px 11px;border-radius:9px;cursor:pointer;font-size:12.5px}
+  button.btn:hover{border-color:var(--accent)}
+  section.sec{margin:30px 0;padding-top:8px;border-top:1px solid var(--border)}
+  section.sec:first-of-type{border-top:none}
+  h2.sh{font-size:21px;margin:16px 0 4px;display:flex;align-items:baseline;gap:10px;letter-spacing:-.01em}
+  h2.sh .num{font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    padding:2px 9px;border-radius:7px;letter-spacing:.02em}
+  .lvl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--chip)}
+  h3{font-size:15px;margin:18px 0 4px;color:var(--ink)}
+  p{margin:8px 0}
+  .goal{background:var(--panel-2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:10px 14px;margin:12px 0;font-size:14px}
+  .goal b{color:var(--ink)}
+  code{background:var(--panel-2);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:13px;overflow:auto;font-size:12.5px;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre .kw{color:var(--accent-2)} pre .cm{color:var(--faint)} pre .op{color:var(--accent)}
+  .worked{background:rgba(90,169,230,.07);border:1px solid var(--border);border-radius:12px;padding:4px 16px 12px;margin:14px 0}
+  .worked > .wl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:12px 0 0}
+  details.chk{margin:12px 0;border:1px solid var(--border);border-radius:10px;background:var(--panel);overflow:hidden}
+  details.chk summary{cursor:pointer;padding:10px 14px;font-size:13.5px;font-weight:600;color:var(--ink);list-style:none}
+  details.chk summary::-webkit-details-marker{display:none}
+  details.chk summary::before{content:"▸ ";color:var(--accent)}
+  details.chk[open] summary::before{content:"▾ "}
+  details.chk .ans{padding:2px 14px 12px;font-size:13.5px;color:var(--muted);border-top:1px solid var(--border)}
+  .q2s{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin:14px 0;font-size:13.5px}
+  .q2s b{color:var(--good)}
+  ul.ex{margin:8px 0;padding-left:20px} ul.ex li{margin:5px 0;font-size:14px}
+  .refs{font-size:13px;color:var(--muted);margin-top:10px}
+  .kbd{font-size:12px;color:var(--faint)}
+  .svgwrap{display:flex;justify-content:center;margin:14px 0}
+  table.m{border-collapse:collapse;font-size:13px;margin:10px 0}
+  table.m td,table.m th{border:1px solid var(--border);padding:6px 12px;text-align:center}
+  table.m th{background:var(--panel-2)}
+  .foot{color:var(--faint);font-size:12.5px;margin-top:36px;border-top:1px solid var(--border);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <h1>Foundations</h1>
+    <span class="tag">Q# Ramp · Phase 1</span>
+    <nav>
+      <a href="#s0"><span class="n">·</span> How to use this</a>
+      <a href="#s1"><span class="n">01</span> Complex numbers</a>
+      <a href="#s2"><span class="n">02</span> Linear algebra</a>
+      <a href="#s3"><span class="n">03</span> Dirac notation</a>
+      <a href="#s4"><span class="n">04</span> Qubit &amp; Bloch sphere</a>
+      <a href="#s5"><span class="n">05</span> Single-qubit gates</a>
+      <a href="#s6"><span class="n">06</span> Superposition &amp; measurement</a>
+      <a href="#s7"><span class="n">07</span> Tensor products</a>
+      <a href="#s8"><span class="n">08</span> Entanglement &amp; no-cloning</a>
+    </nav>
+    <div class="backlinks">
+      <a href="../../roadmap.html">← Back to roadmap</a>
+      <a href="../../CURRICULUM.md">Curriculum (Markdown)</a>
+      <a href="./README.md">This section's folder index</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="hd">
+      <div>
+        <h1 class="title">Foundations: math + quantum concepts</h1>
+        <div class="lead">The starter&nbsp;→&nbsp;intermediate deep dive for Phase&nbsp;1 of the ramp. Enough
+        linear algebra and quantum intuition to read a state vector, predict a measurement, and understand what
+        every later Q# example is actually doing. Each sub-section has a matching folder under
+        <code>docs/01-foundations/</code> for your own notes.</div>
+      </div>
+      <button class="btn" id="themeBtn">☀ / ☾</button>
+    </div>
+
+    <!-- 0 -->
+    <section class="sec" id="s0">
+      <h2 class="sh">How to use this</h2>
+      <p>Work top to bottom; each section assumes the one before it. Every section has a <b>Goal</b>, the core
+      ideas with worked examples, a <b>Check yourself</b> you can expand, a <b>Connect to Q#</b> box pointing at a
+      runnable file, and <b>exercises</b>. Math renders with MathJax (needs an internet connection the first time
+      you open the page).</p>
+      <div class="goal"><b>Prerequisites:</b> comfort with high-school algebra and functions. No prior physics or
+      linear algebra assumed — we build the linear algebra you need here. If you already know complex numbers,
+      unitaries, and the tensor product, skim §1–§3 and start at §4.</div>
+      <p class="kbd">Notation: $i=\sqrt{-1}$; $z^\ast$ is the complex conjugate; vectors are columns; $A^\dagger$ is
+      the conjugate transpose; $|\psi\rangle$ is a quantum state (a unit vector).</p>
+    </section>
+
+    <!-- 1 -->
+    <section class="sec" id="s1">
+      <h2 class="sh"><span class="num">01</span> Complex numbers <span class="lvl">starter</span></h2>
+      <div class="goal"><b>Goal:</b> read and manipulate $a+bi$, compute a modulus and a phase, and see why
+      <em>phase</em> is the currency of quantum computing.</div>
+
+      <p>A complex number is $z = a + bi$ with real part $a$ and imaginary part $b$, where $i^2=-1$. Its
+      <b>complex conjugate</b> is $z^\ast = a - bi$. The <b>modulus</b> (length) is
+      $$|z| = \sqrt{z^\ast z} = \sqrt{a^2+b^2},$$
+      and the <b>phase</b> (angle) is $\varphi = \operatorname{atan2}(b,a)$, so that
+      $z = |z|\,e^{i\varphi}$ by Euler's formula $e^{i\varphi} = \cos\varphi + i\sin\varphi$.</p>
+
+      <p>Why you care: a qubit's amplitudes are complex numbers. The <em>probability</em> of an outcome is the
+      modulus-squared of an amplitude, $|z|^2 = a^2+b^2$, so the phase $\varphi$ never shows up in a single
+      measurement — but it controls how amplitudes <b>interfere</b> when gates combine them. Interference is where
+      all quantum advantage comes from.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+        <p>Let $z = \tfrac{1}{\sqrt2}(1 + i)$. Then $|z|^2 = \tfrac12(1^2+1^2) = 1$, so $|z|=1$: this is a pure
+        phase. Its angle is $\varphi = \operatorname{atan2}(1,1) = 45^\circ = \pi/4$, i.e. $z = e^{i\pi/4}$.</p>
+      </div>
+
+      <details class="chk"><summary>Check yourself: is $e^{i\pi} + 1$ really $0$?</summary>
+        <div class="ans">Yes. $e^{i\pi} = \cos\pi + i\sin\pi = -1 + 0i = -1$, so $e^{i\pi}+1 = 0$. A global phase of
+        $-1$ multiplies the whole state and is physically invisible; a <em>relative</em> phase of $-1$ between two
+        amplitudes (as $Z$ produces) is very visible.</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> the <code>S</code> and <code>T</code> gates apply phases $e^{i\pi/2}$
+      and $e^{i\pi/4}$; <code>Rz(θ, q)</code> applies a $z$-axis phase rotation. You'll use these in §5.</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>Compute $|{\tfrac{3}{5} + \tfrac{4}{5}i}|$ and its phase.</li>
+        <li>Write $-i$ in the form $e^{i\varphi}$.</li>
+        <li>Show that multiplying an amplitude by $e^{i\varphi}$ leaves $|z|^2$ unchanged.</li>
+      </ul>
+      <p class="refs">Folder: <code>01-complex-numbers/</code> · Kata: <em>Complex Arithmetic</em>.</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="sec" id="s2">
+      <h2 class="sh"><span class="num">02</span> Vectors, matrices &amp; unitaries <span class="lvl">starter → intermediate</span></h2>
+      <div class="goal"><b>Goal:</b> represent states as column vectors, transform them with matrices, and recognise
+      the <em>unitary</em> matrices that quantum gates must be.</div>
+
+      <p>A single qubit lives in a 2-dimensional complex vector space $\mathbb{C}^2$. States are column vectors
+      $$|\psi\rangle = \begin{pmatrix}\alpha\\ \beta\end{pmatrix},\qquad \alpha,\beta\in\mathbb{C}.$$
+      The <b>inner product</b> of $|\psi\rangle$ and $|\phi\rangle$ is
+      $\langle\phi|\psi\rangle = \phi_0^\ast\alpha + \phi_1^\ast\beta$, and the <b>norm</b> is
+      $\||\psi\rangle\| = \sqrt{\langle\psi|\psi\rangle}$. Quantum states are always <b>unit vectors</b>:
+      $|\alpha|^2+|\beta|^2 = 1$.</p>
+
+      <p>Gates are matrices $U$ acting by $|\psi\rangle \mapsto U|\psi\rangle$. Because a gate must preserve total
+      probability (keep unit vectors as unit vectors), $U$ must be <b>unitary</b>:
+      $$U^\dagger U = U U^\dagger = I,$$
+      where $U^\dagger$ is the conjugate transpose. Unitary $\Rightarrow$ invertible, and $U^{-1}=U^\dagger$. This
+      is exactly why Q# can auto-generate the <code>Adjoint</code> of an operation: the inverse is just the dagger.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+        <p>The Hadamard matrix $H = \tfrac{1}{\sqrt2}\begin{pmatrix}1&amp;1\\ 1&amp;-1\end{pmatrix}$ applied to
+        $|0\rangle=\begin{pmatrix}1\\0\end{pmatrix}$ gives
+        $H|0\rangle = \tfrac{1}{\sqrt2}\begin{pmatrix}1\\ 1\end{pmatrix}$. Check unitarity: $H^\dagger = H$ and
+        $H^2 = I$, so $H$ is its own inverse.</p>
+      </div>
+
+      <details class="chk"><summary>Check yourself: why can't a gate be the matrix $\begin{pmatrix}1&amp;0\\0&amp;0\end{pmatrix}$?</summary>
+        <div class="ans">It isn't unitary — it maps $|1\rangle$ to the zero vector, destroying the norm, and it has
+        no inverse. Physically it would be an irreversible "erase," which unitary evolution forbids. Measurement,
+        not a gate, is the irreversible step.</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> an <code>operation ... : Unit is Adj + Ctl</code> promises the compiler
+      can build its adjoint (inverse) and a controlled version — possible precisely because gates are unitary.</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>Verify $\langle 0|1\rangle = 0$ and $\langle 0|0\rangle = 1$ for the computational basis.</li>
+        <li>Show the Pauli $X=\begin{pmatrix}0&amp;1\\1&amp;0\end{pmatrix}$ is unitary and equals its own inverse.</li>
+        <li>Compute $H\,|1\rangle$.</li>
+      </ul>
+      <p class="refs">Folder: <code>02-linear-algebra/</code> · Kata: <em>Linear Algebra</em>.</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="sec" id="s3">
+      <h2 class="sh"><span class="num">03</span> Dirac (bra–ket) notation <span class="lvl">starter</span></h2>
+      <div class="goal"><b>Goal:</b> fluently read $|\psi\rangle$, $\langle\psi|$, $\langle a|b\rangle$, and
+      $|a\rangle\langle b|$ — the shorthand every quantum text and the Q# docs use.</div>
+
+      <p>A <b>ket</b> $|\psi\rangle$ is a column vector (a state). A <b>bra</b> $\langle\psi|$ is its conjugate
+      transpose, a row vector. Putting a bra next to a ket forms the <b>inner product</b> (a number),
+      $\langle a|b\rangle$; putting a ket next to a bra forms an <b>outer product</b> (a matrix),
+      $|a\rangle\langle b|$. The computational basis is
+      $$|0\rangle = \begin{pmatrix}1\\0\end{pmatrix},\qquad |1\rangle = \begin{pmatrix}0\\1\end{pmatrix}.$$
+      Any qubit is $|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+        <p>$\langle 0|1\rangle = \begin{pmatrix}1&amp;0\end{pmatrix}\begin{pmatrix}0\\1\end{pmatrix} = 0$ — the basis
+        states are <b>orthogonal</b>. And $|0\rangle\langle 0| = \begin{pmatrix}1&amp;0\\0&amp;0\end{pmatrix}$ is the
+        projector onto $|0\rangle$; measurement probabilities are built from projectors like this.</p>
+      </div>
+
+      <details class="chk"><summary>Check yourself: what is $\langle +|+\rangle$ where $|+\rangle=\tfrac{1}{\sqrt2}(|0\rangle+|1\rangle)$?</summary>
+        <div class="ans">$1$. Expand: $\tfrac12(\langle0|+\langle1|)(|0\rangle+|1\rangle)=\tfrac12(1+0+0+1)=1$.
+        Every valid state is normalised to length 1.</div>
+      </details>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>Write $|+\rangle$ and $|-\rangle=\tfrac{1}{\sqrt2}(|0\rangle-|1\rangle)$ as column vectors and show $\langle+|-\rangle = 0$.</li>
+        <li>Compute the matrix $|0\rangle\langle 1|$.</li>
+      </ul>
+      <p class="refs">Folder: <code>03-dirac-notation/</code>.</p>
+    </section>
+
+    <!-- 4 -->
+    <section class="sec" id="s4">
+      <h2 class="sh"><span class="num">04</span> The qubit &amp; the Bloch sphere <span class="lvl">intermediate</span></h2>
+      <div class="goal"><b>Goal:</b> picture a single-qubit state as a point on a sphere, and connect the angles
+      $\theta,\varphi$ to amplitudes.</div>
+
+      <p>Up to a physically-irrelevant global phase, any single-qubit state can be written with two real angles:
+      $$|\psi\rangle = \cos\tfrac{\theta}{2}\,|0\rangle + e^{i\varphi}\sin\tfrac{\theta}{2}\,|1\rangle,$$
+      with polar angle $\theta\in[0,\pi]$ and azimuth $\varphi\in[0,2\pi)$. Map these to a point on the unit
+      sphere: $|0\rangle$ is the north pole, $|1\rangle$ the south pole, and the equator holds the equal-superposition
+      states $|+\rangle,|-\rangle,|{+}i\rangle,|{-}i\rangle$.</p>
+
+      <div class="svgwrap">
+        <svg viewBox="0 0 260 260" width="240" height="240" role="img" aria-label="Bloch sphere with |0> at top, |1> at bottom, |+> and |-> on the equator">
+          <defs><radialGradient id="bg" cx="38%" cy="32%" r="75%">
+            <stop offset="0" stop-color="#2a3550"/><stop offset="1" stop-color="#141a26"/></radialGradient></defs>
+          <circle cx="130" cy="130" r="96" fill="url(#bg)" stroke="#3a4a63" stroke-width="1.2"/>
+          <ellipse cx="130" cy="130" rx="96" ry="30" fill="none" stroke="#4a5b78" stroke-width="1" stroke-dasharray="4 4"/>
+          <ellipse cx="130" cy="130" rx="30" ry="96" fill="none" stroke="#4a5b78" stroke-width="1" stroke-dasharray="4 4"/>
+          <line x1="130" y1="34" x2="130" y2="226" stroke="#5a6b82" stroke-width="1"/>
+          <line x1="34" y1="130" x2="226" y2="130" stroke="#5a6b82" stroke-width="1"/>
+          <!-- state vector -->
+          <line x1="130" y1="130" x2="196" y2="80" stroke="#5aa9e6" stroke-width="2.4"/>
+          <circle cx="196" cy="80" r="4.5" fill="#7c6cf0"/>
+          <text x="132" y="28" fill="#e6edf3" font-size="13" font-family="sans-serif">|0⟩</text>
+          <text x="132" y="244" fill="#e6edf3" font-size="13" font-family="sans-serif">|1⟩</text>
+          <text x="200" y="132" fill="#9aa7b4" font-size="12" font-family="sans-serif">|+⟩</text>
+          <text x="40" y="132" fill="#9aa7b4" font-size="12" font-family="sans-serif">|−⟩</text>
+          <text x="198" y="74" fill="#7c6cf0" font-size="12" font-family="sans-serif">|ψ⟩</text>
+        </svg>
+      </div>
+
+      <p>Reading the picture: the <b>polar</b> angle sets the $|0\rangle$ vs $|1\rangle$ measurement probabilities
+      ($P(0)=\cos^2\tfrac{\theta}{2}$), while the <b>azimuthal</b> angle $\varphi$ is the relative phase — invisible
+      to a $Z$-basis measurement but rotatable by $Z$-axis gates and visible if you measure in the $X$ basis.</p>
+
+      <details class="chk"><summary>Check yourself: where is $|+\rangle$ on the sphere?</summary>
+        <div class="ans">On the equator, pointing along $+x$: $\theta=\tfrac{\pi}{2}$, $\varphi=0$, giving
+        $\cos\tfrac{\pi}{4}|0\rangle + \sin\tfrac{\pi}{4}|1\rangle = \tfrac{1}{\sqrt2}(|0\rangle+|1\rangle)$.</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> <code>DumpMachine()</code> prints amplitudes; a single qubit after
+      <code>H(q)</code> shows $\tfrac{1}{\sqrt2}$ on both $|0\rangle$ and $|1\rangle$ — the $|+\rangle$ point above.
+      See <a href="../../examples/01_hello_qubit.qs">examples/01_hello_qubit.qs</a>.</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>What $(\theta,\varphi)$ give $|{-}\rangle$? And $|{+}i\rangle=\tfrac{1}{\sqrt2}(|0\rangle+i|1\rangle)$?</li>
+        <li>If $P(0)=\tfrac34$, what is $\theta$?</li>
+      </ul>
+      <p class="refs">Folder: <code>04-qubit-and-bloch-sphere/</code> · Kata: <em>The Qubit</em>.</p>
+    </section>
+
+    <!-- 5 -->
+    <section class="sec" id="s5">
+      <h2 class="sh"><span class="num">05</span> Single-qubit gates <span class="lvl">intermediate</span></h2>
+      <div class="goal"><b>Goal:</b> know the standard one-qubit gates as matrices and as rotations, and predict
+      their effect on basis states.</div>
+
+      <table class="m">
+        <tr><th>Gate</th><th>Matrix</th><th>Effect</th></tr>
+        <tr><td>$X$</td><td>$\begin{pmatrix}0&amp;1\\1&amp;0\end{pmatrix}$</td><td>bit flip: $|0\rangle\leftrightarrow|1\rangle$</td></tr>
+        <tr><td>$Z$</td><td>$\begin{pmatrix}1&amp;0\\0&amp;-1\end{pmatrix}$</td><td>phase flip on $|1\rangle$</td></tr>
+        <tr><td>$Y$</td><td>$\begin{pmatrix}0&amp;-i\\i&amp;0\end{pmatrix}$</td><td>bit + phase flip</td></tr>
+        <tr><td>$H$</td><td>$\tfrac{1}{\sqrt2}\begin{pmatrix}1&amp;1\\1&amp;-1\end{pmatrix}$</td><td>basis $\leftrightarrow$ superposition</td></tr>
+        <tr><td>$S,T$</td><td>$\operatorname{diag}(1,e^{i\pi/2}),\ \operatorname{diag}(1,e^{i\pi/4})$</td><td>add relative phase</td></tr>
+      </table>
+
+      <p>The Paulis $X,Y,Z$ generate rotations about the Bloch axes: $R_x(\theta)=e^{-i\theta X/2}$, and similarly
+      $R_y,R_z$. A useful fact you'll lean on: $H$ turns a $Z$-basis state into an $X$-basis state, which is why a
+      "measure in the $X$ basis" is often coded as $H$ then a $Z$-measurement.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+        <p>$H|0\rangle = |+\rangle$, then $Z|+\rangle = \tfrac{1}{\sqrt2}(|0\rangle-|1\rangle)=|-\rangle$, then
+        $H|-\rangle = |1\rangle$. So $HZH = X$: a phase flip conjugated by Hadamards is a bit flip. This identity is
+        the seed of many circuit simplifications.</p>
+      </div>
+
+      <details class="chk"><summary>Check yourself: what does $T$ do to $|0\rangle$? To $|1\rangle$?</summary>
+        <div class="ans">Nothing to $|0\rangle$ (the top-left entry is 1). It multiplies $|1\rangle$ by
+        $e^{i\pi/4}$, a relative phase. On $|+\rangle$ it produces $\tfrac{1}{\sqrt2}(|0\rangle+e^{i\pi/4}|1\rangle)$,
+        rotating the Bloch point $45^\circ$ around the equator.</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> these are intrinsic operations — <code>X(q)</code>, <code>H(q)</code>,
+      <code>Rz(theta, q)</code>. Play with the biased coin in
+      <a href="../../examples/02_coin_flip.qs">examples/02_coin_flip.qs</a> (it uses <code>Ry</code>).</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>Show $X = HZH$ by multiplying the matrices.</li>
+        <li>What single rotation $R_y(\theta)$ prepares a state with $P(1)=0.3$? (Hint: $P(1)=\sin^2(\theta/2)$.)</li>
+        <li>Verify $S^2 = Z$ and $T^2 = S$.</li>
+      </ul>
+      <p class="refs">Folder: <code>05-single-qubit-gates/</code> · Kata: <em>Single-Qubit Gates</em>.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="sec" id="s6">
+      <h2 class="sh"><span class="num">06</span> Superposition &amp; measurement <span class="lvl">intermediate</span></h2>
+      <div class="goal"><b>Goal:</b> apply the Born rule, understand collapse, and see how the measurement
+      <em>basis</em> changes the outcome.</div>
+
+      <p>For $|\psi\rangle = \alpha|0\rangle + \beta|1\rangle$, a computational-basis ($Z$) measurement returns
+      $0$ with probability $|\alpha|^2$ and $1$ with probability $|\beta|^2$ (the <b>Born rule</b>). Measurement is
+      irreversible: afterwards the state <b>collapses</b> to the observed basis state. Only $|\alpha|^2$ and
+      $|\beta|^2$ matter for one measurement — the relative phase is invisible in this basis but reappears if you
+      measure in a different basis.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+        <p>$|+\rangle$ measured in $Z$: $P(0)=P(1)=\tfrac12$ — a fair coin. The <em>same</em> $|+\rangle$ measured in
+        the $X$ basis is deterministic: it <b>is</b> the $+1$ eigenstate of $X$, so you always get the "$+$"
+        outcome. Different question (basis) $\Rightarrow$ different certainty.</p>
+      </div>
+
+      <details class="chk"><summary>Check yourself: measure $Z|+\rangle=|-\rangle$ in the $Z$ basis — what do you see?</summary>
+        <div class="ans">Still $50/50$. $|-\rangle$ has the same magnitudes as $|+\rangle$; the phase flip is
+        invisible to a $Z$-measurement. Measure in $X$ and you'd get the deterministic "$-$" outcome instead —
+        that's how the phase becomes observable.</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> run
+      <a href="../../examples/05_measurement_bases.qs">examples/05_measurement_bases.qs</a> — it measures the same
+      $|+\rangle$ in $X$ (deterministic) and $Z$ (random) so you can watch the difference.</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>For $|\psi\rangle=\tfrac{1}{\sqrt3}|0\rangle+\sqrt{\tfrac23}\,|1\rangle$, give $P(0)$ and $P(1)$.</li>
+        <li>Why does a global phase $e^{i\gamma}|\psi\rangle$ produce identical measurement statistics?</li>
+      </ul>
+      <p class="refs">Folder: <code>06-superposition-and-measurement/</code> · Kata: <em>Measurements</em>.</p>
+    </section>
+
+    <!-- 7 -->
+    <section class="sec" id="s7">
+      <h2 class="sh"><span class="num">07</span> Tensor products &amp; multi-qubit states <span class="lvl">intermediate</span></h2>
+      <div class="goal"><b>Goal:</b> combine qubits with the tensor product, and see why $n$ qubits need $2^n$
+      amplitudes.</div>
+
+      <p>Two qubits combine by the <b>tensor (Kronecker) product</b>: $|a\rangle\otimes|b\rangle$, written
+      $|ab\rangle$. For basis states,
+      $$|0\rangle\otimes|0\rangle=|00\rangle=\begin{pmatrix}1\\0\\0\\0\end{pmatrix},\quad
+      |1\rangle\otimes|0\rangle=|10\rangle=\begin{pmatrix}0\\0\\1\\0\end{pmatrix}.$$
+      A general two-qubit state has four amplitudes; $n$ qubits have $2^n$. This exponential growth is the resource
+      quantum computing exploits — and the reason classical simulation gets hard fast.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+        <p>Apply $H$ to the first of two qubits in $|00\rangle$: $H|0\rangle\otimes|0\rangle =
+        \tfrac{1}{\sqrt2}(|0\rangle+|1\rangle)\otimes|0\rangle = \tfrac{1}{\sqrt2}(|00\rangle+|10\rangle)$. This is
+        still a <b>product</b> state — the two qubits are independent.</p>
+      </div>
+
+      <details class="chk"><summary>Check yourself: is $\tfrac{1}{\sqrt2}(|00\rangle+|11\rangle)$ a product state?</summary>
+        <div class="ans">No. If it were $(\alpha|0\rangle+\beta|1\rangle)\otimes(\gamma|0\rangle+\delta|1\rangle)$ you'd
+        need $\alpha\delta=0$ and $\beta\gamma=0$ (no $|01\rangle,|10\rangle$ terms) yet $\alpha\gamma,\beta\delta\ne0$
+        — impossible. It can't be factored: that's <b>entanglement</b> (§8).</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> <code>use qs = Qubit[n]</code> allocates an $n$-qubit register; see the
+      GHZ register in <a href="../../examples/04_ghz_state.qs">examples/04_ghz_state.qs</a>.</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>Write $|01\rangle$ as a 4-vector and as $|0\rangle\otimes|1\rangle$.</li>
+        <li>How many complex amplitudes describe 10 qubits?</li>
+      </ul>
+      <p class="refs">Folder: <code>07-tensor-products-and-multiqubit/</code> · Kata: <em>Multi-Qubit Systems</em>.</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="sec" id="s8">
+      <h2 class="sh"><span class="num">08</span> Entanglement &amp; no-cloning <span class="lvl">intermediate</span></h2>
+      <div class="goal"><b>Goal:</b> define entanglement via Bell states, and understand the no-cloning theorem and
+      why it shapes quantum programming.</div>
+
+      <p>An entangled state cannot be written as a tensor product of single-qubit states. The canonical example is
+      the <b>Bell state</b>
+      $$|\Phi^+\rangle = \tfrac{1}{\sqrt2}(|00\rangle+|11\rangle),$$
+      built by $H$ on the first qubit followed by $\mathrm{CNOT}$. Measuring either qubit yields $0$ or $1$ at
+      random, but the two results are <b>perfectly correlated</b>: see one, and you know the other, no matter how
+      far apart. This correlation — not faster-than-light signalling — is the resource behind teleportation and
+      superdense coding.</p>
+
+      <p>The <b>no-cloning theorem</b>: there is no unitary that copies an arbitrary unknown state,
+      $|\psi\rangle|0\rangle \mapsto |\psi\rangle|\psi\rangle$ for all $|\psi\rangle$. A quick argument: cloning
+      would have to be linear (unitaries are), but copying is inherently nonlinear in the amplitudes, so the two
+      requirements conflict. Consequences you'll feel in Q#: you can't "save a backup" of a qubit, debugging can't
+      duplicate mid-circuit states, and error correction must spread information across many qubits rather than
+      copying it.</p>
+
+      <div class="worked">
+        <div class="wl">Worked example</div>
+<pre><span class="cm">// Bell state |Φ+⟩ — the smallest entangled system</span>
+<span class="kw">use</span> (a, b) = (Qubit(), Qubit());
+H(a);          <span class="cm">// (|0⟩+|1⟩)/√2 on a</span>
+CNOT(a, b);    <span class="cm">// entangle: now (|00⟩+|11⟩)/√2</span>
+<span class="cm">// measuring a and b always agrees</span></pre>
+      </div>
+
+      <details class="chk"><summary>Check yourself: does entanglement let you send a message instantly?</summary>
+        <div class="ans">No. Each local measurement looks perfectly random; the correlation only shows up when the
+        two parties later compare results over a classical channel. This is the "no-signalling" principle —
+        entanglement is a correlation resource, not a telegraph.</div>
+      </details>
+
+      <div class="q2s"><b>Connect to Q#:</b> build and measure a Bell pair in
+      <a href="../../examples/03_bell_state.qs">examples/03_bell_state.qs</a>; extend it to a register in
+      <a href="../../examples/04_ghz_state.qs">04_ghz_state.qs</a>. These set up Phase 5's teleportation.</div>
+
+      <h3>Exercises</h3>
+      <ul class="ex">
+        <li>Write the other three Bell states and the circuits that make them (hint: precede with $X$ and/or $Z$).</li>
+        <li>Explain in one sentence why no-cloning does <em>not</em> forbid copying a known classical bit.</li>
+      </ul>
+      <p class="refs">Folder: <code>08-entanglement-and-no-cloning/</code> · Katas: <em>Multi-Qubit Systems</em>, <em>Superposition</em>.</p>
+    </section>
+
+    <div class="foot">
+      Phase 1 of the Q# ramp · when these click, move to
+      <a href="../../CURRICULUM.md">Phase 2 (first Q# programs)</a>.
+      Sources: Microsoft Learn — Azure Quantum, and the Quantum Katas.
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var b=document.getElementById('themeBtn');
+  try{var t=localStorage.getItem('qsharp_theme'); if(t) document.documentElement.setAttribute('data-theme',t);}catch(e){}
+  b.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+    document.documentElement.setAttribute('data-theme',cur);
+    try{localStorage.setItem('qsharp_theme',cur);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
