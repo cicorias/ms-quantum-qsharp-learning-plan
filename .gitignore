@@ -13,3 +13,6 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# qsharp-lab canvas: personal curriculum progress
+.qsharp-progress.json

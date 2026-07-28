@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Curriculum docs</title>
+    <link rel="stylesheet" href="/assets/common.css" />
+    <style>
+      .main { padding: 0; display: flex; }
+      iframe { border: 0; width: 100%; height: 100%; background: var(--background-color-default, #fff); }
+      .md { padding: 16px 22px; max-width: 900px; overflow: auto; width: 100%; }
+      .md h1 { font-size: var(--text-title-large, 24px); margin: 18px 0 8px; }
+      .md h2 { font-size: var(--text-title-medium, 19px); margin: 18px 0 8px; }
+      .md h3 { font-size: var(--text-title-small, 16px); margin: 14px 0 6px; }
+      .md pre { background: color-mix(in srgb, var(--text-color-default, #1f2328) 6%, transparent);
+                border: 1px solid var(--border-color-default, #d1d9e0); border-radius: 8px; padding: 12px; overflow: auto; }
+      .md blockquote { margin: 10px 0; padding: 2px 12px; border-left: 3px solid var(--border-color-default, #d1d9e0); color: var(--text-color-muted, #59636e); }
+      .md hr { border: 0; border-top: 1px solid var(--border-color-default, #d1d9e0); margin: 18px 0; }
+      .md img { max-width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="bar">
+        <h1 id="title">Curriculum docs</h1>
+        <span class="pill" id="live">live reload on</span>
+        <button id="reload">Reload</button>
+      </header>
+      <div class="body">
+        <nav class="side" id="side"></nav>
+        <div class="main" id="main"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      const side = document.getElementById("side");
+      const main = document.getElementById("main");
+      let current = new URLSearchParams(location.search).get("path");
+
+      async function loadList() {
+        const pages = await (await fetch("/api/pages")).json();
+        side.innerHTML = "";
+        for (const page of pages) {
+          const button = document.createElement("button");
+          button.className = "item";
+          button.dataset.path = page.path;
+          button.innerHTML = "<b></b><span class='sub'></span>";
+          button.querySelector("b").textContent = page.name;
+          button.querySelector(".sub").textContent = page.path;
+          button.title = page.path;
+          button.addEventListener("click", () => show(page.path));
+          side.append(button);
+        }
+        if (!current && pages.length) current = pages[0].path;
+        if (current) show(current);
+      }
+
+      async function show(path) {
+        current = path;
+        for (const button of side.querySelectorAll("button.item")) {
+          button.classList.toggle("active", button.dataset.path === path);
+        }
+        document.getElementById("title").textContent = path;
+        main.innerHTML = "";
+        if (path.endsWith(".md")) {
+          const page = await (await fetch("/api/markdown?path=" + encodeURIComponent(path))).json();
+          const article = document.createElement("article");
+          article.className = "md";
+          article.innerHTML = page.html;
+          for (const anchor of article.querySelectorAll("a[href]")) {
+            const href = anchor.getAttribute("href");
+            if (/^(https?:)?\/\//.test(href)) anchor.target = "_blank";
+            else
+              anchor.addEventListener("click", (event) => {
+                event.preventDefault();
+                show(new URL(href, "file:///" + path).pathname.replace(/^\//, ""));
+              });
+          }
+          main.append(article);
+        } else {
+          const frame = document.createElement("iframe");
+          frame.src = "/file/" + path + "?t=" + Date.now();
+          main.append(frame);
+        }
+      }
+
+      document.getElementById("reload").addEventListener("click", () => show(current));
+      const events = new EventSource("/events");
+      events.addEventListener("changed", () => show(current));
+      events.addEventListener("show", (event) => show(JSON.parse(event.data).path));
+      loadList();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Q# example runner</title>
+    <link rel="stylesheet" href="/assets/common.css" />
+    <style>
+      .grid { display: grid; gap: 14px; }
+      .hist { display: grid; gap: 4px; }
+      .row { display: grid; grid-template-columns: minmax(90px, max-content) 1fr max-content; gap: 8px; align-items: center; }
+      .row .track { height: 14px; border-radius: 4px; }
+      .row .track > i { border-radius: 4px; }
+      .row code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .err { border-color: var(--true-color-red, #cf222e); color: var(--true-color-red, #cf222e); }
+      h2 { font-size: var(--text-title-small, 15px); margin-bottom: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="bar">
+        <h1 id="title">Q# example runner</h1>
+        <label class="muted" for="shots">shots</label>
+        <input type="number" id="shots" value="100" min="1" max="5000" style="width: 78px" />
+        <button id="run">Run on simulator</button>
+      </header>
+      <div class="body">
+        <nav class="side" id="side"></nav>
+        <div class="main grid">
+          <div id="status" class="muted">Pick an example.</div>
+          <div id="result"></div>
+          <div>
+            <h2>Source</h2>
+            <pre class="block" id="source"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const side = document.getElementById("side");
+      const params = new URLSearchParams(location.search);
+      let current = params.get("file");
+      let running = false;
+
+      function setStatus(text, isError = false) {
+        const status = document.getElementById("status");
+        status.textContent = text;
+        status.className = isError ? "err" : "muted";
+      }
+
+      async function loadList() {
+        const examples = await (await fetch("/api/examples")).json();
+        side.innerHTML = "";
+        for (const example of examples) {
+          const button = document.createElement("button");
+          button.className = "item";
+          button.dataset.file = example.file;
+          button.innerHTML = "<b></b><span class='sub'></span>";
+          button.querySelector("b").textContent = example.name.replace(/\.qs$/, "");
+          button.querySelector(".sub").textContent = example.summary;
+          button.title = example.summary;
+          button.addEventListener("click", () => select(example.file));
+          side.append(button);
+        }
+        if (!current && examples.length) current = examples[0].file;
+        if (current) select(current);
+      }
+
+      async function select(file) {
+        current = file;
+        for (const button of side.querySelectorAll("button.item")) {
+          button.classList.toggle("active", button.dataset.file === file);
+        }
+        const example = await (await fetch("/api/example?file=" + encodeURIComponent(file))).json();
+        document.getElementById("title").textContent = example.name;
+        document.getElementById("source").textContent = example.source;
+        document.getElementById("result").innerHTML = "";
+        setStatus("Ready — click Run to execute Main() on the local simulator.");
+      }
+
+      function renderRun(run) {
+        const result = document.getElementById("result");
+        result.innerHTML = "";
+        if (run.error) {
+          setStatus("Failed", true);
+          const pre = document.createElement("pre");
+          pre.className = "block err";
+          pre.textContent = run.error;
+          result.append(pre);
+          return;
+        }
+        setStatus(`${run.results.length} shots completed`);
+
+        const max = Math.max(1, ...Object.values(run.histogram));
+        const hist = document.createElement("div");
+        hist.className = "hist";
+        const heading = document.createElement("h2");
+        heading.textContent = "Outcomes";
+        result.append(heading, hist);
+        for (const [value, count] of Object.entries(run.histogram)) {
+          const row = document.createElement("div");
+          row.className = "row";
+          row.innerHTML = `<code></code><div class="track"><i style="width:${(count / max) * 100}%"></i></div><span class="muted">${count}</span>`;
+          row.querySelector("code").textContent = value;
+          hist.append(row);
+        }
+        if (run.output?.trim()) {
+          const heading2 = document.createElement("h2");
+          heading2.textContent = "Simulator output";
+          const pre = document.createElement("pre");
+          pre.className = "block";
+          pre.textContent = run.output.trim();
+          result.append(heading2, pre);
+        }
+      }
+
+      document.getElementById("run").addEventListener("click", async () => {
+        if (!current || running) return;
+        running = true;
+        document.getElementById("run").disabled = true;
+        setStatus("Running on the local simulator… (first run compiles the env, be patient)");
+        try {
+          const response = await fetch("/api/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file: current, shots: Number(document.getElementById("shots").value) || 100 }),
+          });
+          renderRun(await response.json());
+        } catch (error) {
+          setStatus(String(error), true);
+        } finally {
+          running = false;
+          document.getElementById("run").disabled = false;
+        }
+      });
+
+      new EventSource("/events").addEventListener("ran", (event) => renderRun(JSON.parse(event.data)));
+      loadList();
+    </script>
+  </body>
+</html>
