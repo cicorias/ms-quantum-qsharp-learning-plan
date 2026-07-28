@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Q# learning progress</title>
+    <link rel="stylesheet" href="/assets/common.css" />
+    <style>
+      .phase { border: 1px solid var(--border-color-default, #d1d9e0); border-radius: 10px; margin-bottom: 12px; }
+      .phase > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+      .phase > summary::-webkit-details-marker { display: none; }
+      .num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex: 0 0 auto;
+             border-radius: 50%; border: 1px solid var(--border-color-default, #d1d9e0); font-size: var(--text-body-small, 12px); }
+      .phase[data-complete="true"] .num { background: var(--true-color-blue-muted, #ddf4ff); border-color: var(--true-color-blue, #0969da); }
+      .title { font-weight: var(--font-weight-semibold, 600); flex: 1 1 auto; }
+      ul.tasks { list-style: none; margin: 0; padding: 0 12px 10px 12px; }
+      ul.tasks li { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-top: 1px solid var(--border-color-default, #d1d9e0); }
+      ul.tasks input { margin-top: 3px; cursor: pointer; }
+      ul.tasks label { cursor: pointer; }
+      li.done label { color: var(--text-color-muted, #59636e); text-decoration: line-through; }
+      .summary { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-color-default, #d1d9e0); }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="bar">
+        <h1>Q# learning progress</h1>
+        <span class="pill" id="current">–</span>
+        <button id="reset" title="Clear all completion state">Reset</button>
+      </header>
+      <div class="summary">
+        <b id="pct">0%</b>
+        <div class="track"><i id="fill" style="width:0%"></i></div>
+        <span class="muted" id="count">0 of 0</span>
+      </div>
+      <div class="main" id="list"></div>
+    </div>
+
+    <script type="module">
+      const list = document.getElementById("list");
+      let state = null;
+
+      function render(view) {
+        state = view;
+        document.getElementById("pct").textContent = view.percent + "%";
+        document.getElementById("fill").style.width = view.percent + "%";
+        document.getElementById("count").textContent = `${view.complete} of ${view.total} steps`;
+        document.getElementById("current").textContent =
+          view.currentPhase === null ? "Complete 🎉" : "Phase " + view.currentPhase;
+
+        const open = new Set([...list.querySelectorAll("details[open]")].map((d) => d.dataset.phase));
+        const focus = document.activeElement?.dataset?.taskId ?? null;
+        list.innerHTML = "";
+
+        for (const phase of view.phases) {
+          const complete = phase.done === phase.total;
+          const details = document.createElement("details");
+          details.className = "phase";
+          details.dataset.phase = String(phase.index);
+          details.dataset.complete = String(complete);
+          details.open = open.size ? open.has(String(phase.index)) : phase.index === view.currentPhase;
+
+          const summary = document.createElement("summary");
+          summary.innerHTML =
+            `<span class="num">${phase.index}</span>` +
+            `<span class="title"></span>` +
+            `<span class="pill">${phase.done}/${phase.total}</span>` +
+            `<button class="phase-toggle" type="button">${complete ? "Clear phase" : "Mark all"}</button>`;
+          summary.querySelector(".title").textContent = phase.title;
+          summary.querySelector(".phase-toggle").addEventListener("click", (event) => {
+            event.preventDefault();
+            post("/api/phase", { phase: phase.index, done: !complete });
+          });
+          details.append(summary);
+
+          const ul = document.createElement("ul");
+          ul.className = "tasks";
+          for (const task of phase.tasks) {
+            const li = document.createElement("li");
+            li.className = task.done ? "done" : "";
+            const box = document.createElement("input");
+            box.type = "checkbox";
+            box.checked = task.done;
+            box.id = task.id;
+            box.dataset.taskId = task.id;
+            box.addEventListener("change", () => post("/api/task", { taskId: task.id, done: box.checked }));
+            const label = document.createElement("label");
+            label.htmlFor = task.id;
+            label.innerHTML = task.html;
+            for (const anchor of label.querySelectorAll("a")) anchor.target = "_blank";
+            li.append(box, label);
+            ul.append(li);
+          }
+          details.append(ul);
+          list.append(details);
+        }
+
+        if (focus) document.querySelector(`[data-task-id="${focus}"]`)?.focus();
+      }
+
+      async function post(path, body) {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        render(await response.json());
+      }
+
+      async function refresh() {
+        render(await (await fetch("/api/state")).json());
+      }
+
+      document.getElementById("reset").addEventListener("click", () => {
+        if (confirm("Clear all recorded progress?")) post("/api/reset", {});
+      });
+
+      new EventSource("/events").addEventListener("changed", refresh);
+      refresh();
+    </script>
+  </body>
+</html>
